@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="lib" path="C:/Users/Elad/Downloads/dnsjava-2.1.6.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Elad/Downloads/org.json-20120521.jar"/>
+	<classpathentry kind="lib" path="serverroot/dnsjava-2.0.0.jar"/>
+	<classpathentry kind="lib" path="serverroot/json-20151123.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
