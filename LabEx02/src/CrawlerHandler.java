@@ -57,7 +57,7 @@ public class CrawlerHandler {
 	public static boolean isCrawlDone() {
 		if (Downloaders.isFree() && Analyzers.isFree()) {
 			try {
-				Thread.sleep(3000);
+				Thread.sleep(1000);
 				if (Downloaders.isFree() && Analyzers.isFree()) {
 					return true;
 				}

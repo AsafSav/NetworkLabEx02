@@ -57,13 +57,10 @@ public class UrlDownloader implements Runnable {
 //			}
 			
 			while (((line = reader.readLine()) != null) && (!line.isEmpty())) {
-				//htmlPage.append(line.toLowerCase());
 				headers.append(line.toLowerCase() + "\n");
 				System.out.println(line);
-			}
-			
+			}				
 
-			
 			while ((i = reader.read()) != -1) {
 				htmlPage.append((char)i);
 			}
