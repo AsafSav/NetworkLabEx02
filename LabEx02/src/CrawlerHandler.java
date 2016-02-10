@@ -9,11 +9,11 @@ public class CrawlerHandler {
 	private static ThreadPool Downloaders;
 	private static ThreadPool Analyzers;
 	private static List<String> CheckedUrls;
-	private String DomainIP;
+	private static String Domain;
 	public static CrawlerStatistics stats;	
 	
 	public CrawlerHandler(String i_Domain) {
-		DomainIP = WebUtils.GetIpByDomain(i_Domain);
+		Domain = WebUtils.GetIpByDomain(i_Domain);
 		initCrawler();
 	}
 	
@@ -23,12 +23,16 @@ public class CrawlerHandler {
 		Analyzers = new ThreadPool(config.GetMaxAnalyzer());	
 		stats = new CrawlerStatistics();
 		CheckedUrls = new ArrayList<String>();
+		stats.initStatistics(Domain);
 	}
 	
 	public void StartCrawling() {
-		stats.initStatistics(DomainIP);
-		InsertToDownladers(new UrlDownloader(80, DomainIP));
+		InsertToDownladers(new UrlDownloader(80, Domain));
 		// Insert the first url from user to downloaders
+	}
+	
+	public static String GetDomain() {
+		return Domain;
 	}
 	
 	public static void doWhenFinished() {
@@ -59,7 +63,7 @@ public class CrawlerHandler {
 	}
 	
 	public String GetDomainIp() {
-		return DomainIP;
+		return Domain;
 	}
 	
 	// If the url has been crawled we return true, otherwise we return false and add it to the "checked" list;

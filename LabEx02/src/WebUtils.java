@@ -14,8 +14,8 @@ import org.xbill.DNS.Type;
 
 public class WebUtils {
 	
-	private static final Pattern UrlPattern = Pattern.compile("(?<protocol>http[s]?):\\/\\/[.*\\@]?(www\\.|.*@)?(?<domain>[\\w\\-]+\\.[\\w\\-]+[\\.[\\w\\-]+]*)(?<port>\\:\\d+)?(?<uri>\\S*)");
-	private static final String[] UrlGroups = new String[]{"protocol", "domain", "uri", "port"};
+	private static final Pattern UrlPattern = Pattern.compile("((?<protocol>http[s]?):\\/\\/)?[.*\\@]?(www\\.|.*@)?(?<domain>[\\w\\-]+\\.[\\w\\-]+[\\.[\\w\\-]+]*)(?<port>\\:\\d+)?(?<uri>\\S*)");
+	private static final String[] UrlGroups = new String[]{"protocol", "domain", "port", "uri"};
 	
 	public static HashMap<String, String> CutUrl(String url) {
 		HashMap<String, String> toReturn = new HashMap<String, String>();
@@ -39,7 +39,11 @@ public class WebUtils {
 			Lookup lookup = new Lookup(domain, Type.A);
 			lookup.setResolver(resolver);
 			Record[] records = lookup.run();
-			String toReturn = ((ARecord) records[0]).getAddress().toString().split("/")[0];
+			String toReturn = ((ARecord) records[0]).getAddress().toString();
+			toReturn = toReturn.split("/")[0];
+			if (toReturn.isEmpty()) {
+				return toReturn;
+			}
 			return toReturn.substring(0, toReturn.length() - 1);
 		} catch (UnknownHostException e) {
 			// HANDLE WEIRD EXCEPTION

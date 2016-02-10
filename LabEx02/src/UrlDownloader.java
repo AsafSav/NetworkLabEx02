@@ -5,12 +5,12 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 
 
 public class UrlDownloader implements Runnable {
-
+	
 	private String urlToDownload;
-	private String Domain;
 	private int Port;
 	Socket S;
 	
@@ -26,24 +26,27 @@ public class UrlDownloader implements Runnable {
 	
 	private void Download() {
 		StringBuilder htmlPage = new StringBuilder("");
+		HashMap<String, String> url = WebUtils.CutUrl(urlToDownload);
 		HttpRequest request = new HttpRequest(urlToDownload);
 		try {
 			S = new Socket();
-			S.connect(new InetSocketAddress(urlToDownload, Port), 1000);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(S.getInputStream()));
+			S.connect(new InetSocketAddress(CrawlerHandler.GetDomain(), Port), 1000);
 			DataOutputStream writer = new DataOutputStream(S.getOutputStream());
 			writer.write(request.CreateRequest(eRequestType.GET).getBytes());
 			writer.flush();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(S.getInputStream()));
 			String line;
-			char[] msg = new char[99999];
-			while ((reader.read(msg)) != -1) {
-				//htmlPage.append(line + "\n");
-				htmlPage.append(msg);
-				System.out.println(msg.toString());
+			if (reader.ready()) {
+				while ((line = reader.readLine()) != null) {
+					htmlPage.append(line + "\n");
+					System.out.println(line);
+				}
 			}
-			
-			HtmlAnalyzer analyzer = new HtmlAnalyzer(htmlPage, true);
-			CrawlerHandler.InsertToAnalyzers(analyzer);
+			if (!htmlPage.toString().isEmpty()) {
+				HtmlAnalyzer analyzer = new HtmlAnalyzer(htmlPage);
+				CrawlerHandler.InsertToAnalyzers(analyzer);
+			}
+
 			writer.close();
 			reader.close();
 			S.close();

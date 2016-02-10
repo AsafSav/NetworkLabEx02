@@ -10,12 +10,12 @@ public class HtmlAnalyzer implements Runnable {
 	private StringBuilder Html;
 	private List<String> Suspectedlinks;
 	private Pattern hrefPattern = Pattern.compile("href=\"(.*?)\"");
-	private boolean isHtml; 
+	private int Port;
 	
-	public HtmlAnalyzer(StringBuilder Html, boolean isHtml) {
+	public HtmlAnalyzer(StringBuilder Html) {
 		this.Html = Html;
-		this.isHtml = isHtml;
 		config = Config.GetInstance();
+		Port = 80;
 	}
 	
 	@Override
@@ -23,14 +23,21 @@ public class HtmlAnalyzer implements Runnable {
 		try {
 			Analyze();
 		} catch (CrawlerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 	}
 
 	private void Analyze() throws CrawlerException {
-		if (!Html.substring(9, 12).equals("200")) {
-			throw new CrawlerException("Not a valid response");
+		int responseCode =  Integer.parseInt(Html.substring(9, 12));
+		if (responseCode == 301) {
+			int locationIndex = Html.indexOf("Location:");
+			if (locationIndex != -1) {
+				String path = Html.substring(locationIndex + 10, Math.min(Html.indexOf("\n", locationIndex + 10), Html.indexOf(" ", locationIndex + 10)));
+				CrawlerHandler.InsertToDownladers(new UrlDownloader(Port, path));
+				return;
+			}
+		} else if (responseCode != 200) {
+			throw new CrawlerException("Not a valid response. Expected 200, Given " + responseCode);
 		}
 		
 		findHrefs();
@@ -56,7 +63,8 @@ public class HtmlAnalyzer implements Runnable {
 					// Create head request and handle statistics
 				}
 				else {
-					CrawlerHandler.InsertToDownladers(new UrlDownloader(80, link)); // TODO - CHECK HOW WE GET THE ACTUAL PORT
+					
+					CrawlerHandler.InsertToDownladers(new UrlDownloader(Port, link)); // TODO - CHECK HOW WE GET THE ACTUAL PORT
 					// Update statistics
 				}
 			}
