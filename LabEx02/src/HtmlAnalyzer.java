@@ -1,3 +1,11 @@
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,6 +24,7 @@ public class HtmlAnalyzer implements Runnable {
 		this.Html = Html;
 		config = Config.GetInstance();
 		Port = 80;
+		Suspectedlinks = new ArrayList<String>();
 	}
 	
 	@Override
@@ -33,6 +42,9 @@ public class HtmlAnalyzer implements Runnable {
 			int locationIndex = Html.indexOf("Location:");
 			if (locationIndex != -1) {
 				String path = Html.substring(locationIndex + 10, Math.min(Html.indexOf("\n", locationIndex + 10), Html.indexOf(" ", locationIndex + 10)));
+				HashMap<String, String> url = WebUtils.CutUrl(path);
+				CrawlerHandler.SetDomain(url.get("domain"));
+				System.out.println(CrawlerHandler.GetDomain());
 				CrawlerHandler.InsertToDownladers(new UrlDownloader(Port, path));
 				return;
 			}
@@ -41,7 +53,11 @@ public class HtmlAnalyzer implements Runnable {
 		}
 		
 		findHrefs();
-		handleLinks();
+		
+		if (Suspectedlinks != null) {
+			handleLinks();
+		}
+		
 		if (CrawlerHandler.isCrawlDone()) {
 			CrawlerHandler.doWhenFinished();
 		}
@@ -55,19 +71,20 @@ public class HtmlAnalyzer implements Runnable {
 				String ext = link.substring(dotIndex + 1);
 				if (config.isImageExtension(ext)) {
 					// Create head request and handle statistics
+					continue;
 				} 
 				else if (config.isVideoExtension(ext)) {
 					// Create head request and handle statistics
+					continue;
 				}
 				else if (config.isDocumentExtension(ext)) {
 					// Create head request and handle statistics
-				}
-				else {
-					
-					CrawlerHandler.InsertToDownladers(new UrlDownloader(Port, link)); // TODO - CHECK HOW WE GET THE ACTUAL PORT
-					// Update statistics
+					continue;
 				}
 			}
+			
+			// Update Statistics
+			CrawlerHandler.InsertToDownladers(new UrlDownloader(Port, link)); // TODO - CHECK HOW WE GET THE ACTUAL PORT
 		}
 		
 	}
@@ -76,8 +93,8 @@ public class HtmlAnalyzer implements Runnable {
 		Matcher matcher = hrefPattern.matcher(Html);
 		String link = "";
 		while (matcher.find()) {
-			link = matcher.group();
-			if (!Suspectedlinks.contains(link) && CrawlerHandler.CheckIfUrlBeenCrawled(link) && isValidDomain(link)) {
+			link = matcher.group(1);
+			if (!Suspectedlinks.contains(link) && !CrawlerHandler.CheckIfUrlBeenCrawled(link) && isValidDomain(link)) {
 				Suspectedlinks.add(link);
 			}
 		}
@@ -85,7 +102,44 @@ public class HtmlAnalyzer implements Runnable {
 	
 	private boolean isValidDomain(String link) {
 		boolean toReturn = true;
-		// CHECK IF VALID - CURRENT DOMAIN
+		HashMap<String, String> url = WebUtils.CutUrl(link);
+		if (url.containsKey("domain") && !url.get("domain").equals(CrawlerHandler.GetDomain())) {
+			toReturn = false;
+		}
+		
+		return toReturn;
+	}
+	
+	private long GetDocFromServer(String uri) throws CrawlerException {
+		long toReturn = -1;
+		String request = HttpHeadRequest(uri);
+		StringBuilder headResponse = new StringBuilder("");
+		try {
+			Socket S = new Socket();
+			S.connect(new InetSocketAddress(CrawlerHandler.GetDomain(), Port), 1000);
+			DataOutputStream writer = new DataOutputStream(S.getOutputStream());
+			writer.write(request.getBytes());
+			writer.flush();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(S.getInputStream()));
+			String line;
+			while ((line = reader.readLine()) != null) {
+				headResponse.append(line.toLowerCase() + "\n");
+			}
+			
+			int responseCode =  Integer.parseInt(headResponse.substring(9, 12));
+			if (responseCode == 200) {
+				int lengthIndex = headResponse.indexOf("content-length:");
+				if (lengthIndex != -1) {
+					String docLength = headResponse.substring(lengthIndex + 15, Math.min(headResponse.indexOf("\r", lengthIndex + 15), headResponse.indexOf(" ", lengthIndex + 15)));
+					toReturn = Long.parseLong(docLength);
+				}
+			}
+			
+			
+		} catch (IOException e) {
+			throw new CrawlerException("Couldn't get document from server.     " + uri);
+		}
+		
 		return toReturn;
 	}
 	

@@ -27,7 +27,13 @@ public class UrlDownloader implements Runnable {
 	private void Download() {
 		StringBuilder htmlPage = new StringBuilder("");
 		HashMap<String, String> url = WebUtils.CutUrl(urlToDownload);
-		HttpRequest request = new HttpRequest(urlToDownload);
+		String toFetch = "";
+		if (url.containsKey("uri")) {
+			toFetch = url.get("uri");
+		} else {
+			toFetch = "/";
+		}
+		HttpRequest request = new HttpRequest(toFetch);
 		try {
 			S = new Socket();
 			S.connect(new InetSocketAddress(CrawlerHandler.GetDomain(), Port), 1000);
@@ -38,7 +44,7 @@ public class UrlDownloader implements Runnable {
 			String line;
 			if (reader.ready()) {
 				while ((line = reader.readLine()) != null) {
-					htmlPage.append(line + "\n");
+					htmlPage.append(line.toLowerCase() + "\n");
 					System.out.println(line);
 				}
 			}

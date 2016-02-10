@@ -13,7 +13,8 @@ public class CrawlerHandler {
 	public static CrawlerStatistics stats;	
 	
 	public CrawlerHandler(String i_Domain) {
-		Domain = WebUtils.GetIpByDomain(i_Domain);
+		//Domain = WebUtils.GetIpByDomain(WebUtils.CutUrl(i_Domain).get("domain"));
+		Domain = WebUtils.CutUrl(i_Domain).get("domain");
 		initCrawler();
 	}
 	
@@ -23,6 +24,8 @@ public class CrawlerHandler {
 		Analyzers = new ThreadPool(config.GetMaxAnalyzer());	
 		stats = new CrawlerStatistics();
 		CheckedUrls = new ArrayList<String>();
+		CheckIfUrlBeenCrawled(Domain);
+		CheckIfUrlBeenCrawled("/");
 		stats.initStatistics(Domain);
 	}
 	
@@ -33,6 +36,10 @@ public class CrawlerHandler {
 	
 	public static String GetDomain() {
 		return Domain;
+	}
+	
+	public static void SetDomain(String alternateDomain) {
+		Domain = alternateDomain;
 	}
 	
 	public static void doWhenFinished() {

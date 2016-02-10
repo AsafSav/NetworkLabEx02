@@ -22,7 +22,7 @@ public class HttpRequestHandler implements Runnable {
 	public String GetDomainFromRequest() {
 		String toReturn = "";
 		if (request != null && request.GetParams() != null && !request.GetParams().get("domain").isEmpty()) {
-			toReturn = request.GetParams().get("domain");
+			toReturn = request.GetParams().get("domain").replace("%3a", ":").replace("%2f", "/");
 		}
 		
 		return toReturn;

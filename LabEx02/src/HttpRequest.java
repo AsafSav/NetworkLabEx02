@@ -11,11 +11,14 @@ public class HttpRequest {
 	
 	public String CreateRequest(eRequestType requestType) {
 		StringBuilder toReturn = new StringBuilder("");
-		toReturn.append(requestType.toString());
+		toReturn.append(requestType.toString() + " ");
 		toReturn.append(Address);
 		toReturn.append(" HTTP/1.1");
+		toReturn.append(CRLF);
+		toReturn.append("Host: " + CrawlerHandler.GetDomain());
 		toReturn.append(CRLF + CRLF);
-			
+		
+		System.out.println("The Request  =  " + toReturn.toString());
 		return toReturn.toString();
 	}
 }
