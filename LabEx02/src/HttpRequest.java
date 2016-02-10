@@ -13,7 +13,7 @@ public class HttpRequest {
 		StringBuilder toReturn = new StringBuilder("");
 		toReturn.append(requestType.toString() + " ");
 		toReturn.append(Address);
-		toReturn.append(" HTTP/1.1");
+		toReturn.append(" HTTP/1.0");
 		toReturn.append(CRLF);
 		toReturn.append("Host: " + CrawlerHandler.GetDomain());
 		toReturn.append(CRLF + CRLF);

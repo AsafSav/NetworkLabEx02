@@ -30,8 +30,10 @@ public class UrlDownloader implements Runnable {
 		String toFetch = "";
 		if (url.containsKey("uri")) {
 			toFetch = url.get("uri");
-		} else {
+		} else if (urlToDownload.equals(CrawlerHandler.GetDomain())) {
 			toFetch = "/";
+		} else {
+			toFetch = urlToDownload;
 		}
 		HttpRequest request = new HttpRequest(toFetch);
 		try {
@@ -42,11 +44,9 @@ public class UrlDownloader implements Runnable {
 			writer.flush();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(S.getInputStream()));
 			String line;
-			if (reader.ready()) {
-				while ((line = reader.readLine()) != null) {
-					htmlPage.append(line.toLowerCase() + "\n");
-					System.out.println(line);
-				}
+			while ((line = reader.readLine()) != null) {
+				htmlPage.append(line.toLowerCase());
+				System.out.println(line);
 			}
 			if (!htmlPage.toString().isEmpty()) {
 				HtmlAnalyzer analyzer = new HtmlAnalyzer(htmlPage);
