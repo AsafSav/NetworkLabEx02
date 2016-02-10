@@ -21,11 +21,16 @@ public class UrlDownloader implements Runnable {
 	
 	@Override
 	public void run() {
-		Download();
+		try {
+			Download();
+		} catch (CrawlerException e) {
+			System.out.println(e.getMessage());
+		}
 	}
 	
-	private void Download() {
+	private void Download() throws CrawlerException{
 		StringBuilder htmlPage = new StringBuilder("");
+		StringBuilder headers = new StringBuilder("");
 		HashMap<String, String> url = WebUtils.CutUrl(urlToDownload);
 		String toFetch = "";
 		if (url.containsKey("uri")) {
@@ -44,15 +49,34 @@ public class UrlDownloader implements Runnable {
 			writer.flush();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(S.getInputStream()));
 			String line;
-			while ((line = reader.readLine()) != null) {
-				htmlPage.append(line.toLowerCase());
+			int i = 0;
+
+//			while ((line = reader.readLine()) != null) {
+//				htmlPage.append(line.toLowerCase());
+//				System.out.println(line);
+//			}
+			
+			while (((line = reader.readLine()) != null) && (!line.isEmpty())) {
+				//htmlPage.append(line.toLowerCase());
+				headers.append(line.toLowerCase() + "\n");
 				System.out.println(line);
 			}
+			
+
+			
+			while ((i = reader.read()) != -1) {
+				htmlPage.append((char)i);
+			}
+			
 			if (!htmlPage.toString().isEmpty()) {
 				HtmlAnalyzer analyzer = new HtmlAnalyzer(htmlPage);
 				CrawlerHandler.InsertToAnalyzers(analyzer);
+			} else if (!checkAlternateLocation(headers)) {
+				if (CrawlerHandler.isCrawlDone()) {
+					CrawlerHandler.doWhenFinished();
+				}
 			}
-
+			
 			writer.close();
 			reader.close();
 			S.close();
@@ -65,6 +89,25 @@ public class UrlDownloader implements Runnable {
 			e.printStackTrace();
 		}
 		
+	}
+
+	private boolean checkAlternateLocation(StringBuilder headers) throws CrawlerException {
+		int responseCode =  Integer.parseInt(headers.substring(9, 12));
+		if (responseCode == 301) {
+			int locationIndex = headers.indexOf("location:");
+			if (locationIndex != -1) {
+				String path = headers.substring(locationIndex + 10, Math.min(headers.indexOf("\n", locationIndex + 11), headers.indexOf(" ", locationIndex + 11)));
+				HashMap<String, String> url = WebUtils.CutUrl(path);
+				CrawlerHandler.SetDomain(url.get("domain"));
+				System.out.println(CrawlerHandler.GetDomain());
+				CrawlerHandler.InsertToDownladers(new UrlDownloader(Port, path));
+				return true;
+			}
+		} else if (responseCode != 200) {
+			throw new CrawlerException("Bad Response. Expected response code 200/301. Given: " + responseCode);
+		}
+		
+		return false;
 	}
 
 }

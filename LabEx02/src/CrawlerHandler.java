@@ -10,7 +10,8 @@ public class CrawlerHandler {
 	private static ThreadPool Analyzers;
 	private static List<String> CheckedUrls;
 	private static String Domain;
-	public static CrawlerStatistics stats;	
+	public static CrawlerStatistics stats;
+	public static boolean disrespectRobots;
 	
 	public CrawlerHandler(String i_Domain) {
 		//Domain = WebUtils.GetIpByDomain(WebUtils.CutUrl(i_Domain).get("domain"));

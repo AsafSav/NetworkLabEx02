@@ -37,20 +37,7 @@ public class HtmlAnalyzer implements Runnable {
 	}
 
 	private void Analyze() throws CrawlerException {
-		int responseCode =  Integer.parseInt(Html.substring(9, 12));
-		if (responseCode == 301) {
-			int locationIndex = Html.indexOf("Location:");
-			if (locationIndex != -1) {
-				String path = Html.substring(locationIndex + 10, Math.min(Html.indexOf("\n", locationIndex + 10), Html.indexOf(" ", locationIndex + 10)));
-				HashMap<String, String> url = WebUtils.CutUrl(path);
-				CrawlerHandler.SetDomain(url.get("domain"));
-				System.out.println(CrawlerHandler.GetDomain());
-				CrawlerHandler.InsertToDownladers(new UrlDownloader(Port, path));
-				return;
-			}
-		} else if (responseCode != 200) {
-			throw new CrawlerException("Not a valid response. Expected 200, Given " + responseCode);
-		}
+		updateFileStats();
 		
 		findHrefs();
 		
@@ -64,6 +51,11 @@ public class HtmlAnalyzer implements Runnable {
 		
 	}
 	
+	private void updateFileStats() {
+		CrawlerStatistics.numFiles++;
+		CrawlerStatistics.sizeFiles += Html.length(); 
+	}
+
 	private void handleLinks() {
 		for(String link : Suspectedlinks) {
 			int dotIndex = link.indexOf(".");
@@ -110,8 +102,8 @@ public class HtmlAnalyzer implements Runnable {
 		return toReturn;
 	}
 	
-	private long GetDocFromServer(String uri) throws CrawlerException {
-		long toReturn = -1;
+	private int GetDocFromServer(String uri) throws CrawlerException {
+		int toReturn = -1;
 		String request = HttpHeadRequest(uri);
 		StringBuilder headResponse = new StringBuilder("");
 		try {
@@ -128,16 +120,24 @@ public class HtmlAnalyzer implements Runnable {
 			
 			int responseCode =  Integer.parseInt(headResponse.substring(9, 12));
 			if (responseCode == 200) {
-				int lengthIndex = headResponse.indexOf("content-length:");
-				if (lengthIndex != -1) {
-					String docLength = headResponse.substring(lengthIndex + 15, Math.min(headResponse.indexOf("\r", lengthIndex + 15), headResponse.indexOf(" ", lengthIndex + 15)));
-					toReturn = Long.parseLong(docLength);
-				}
+				return GetContentLength(headResponse);
 			}
 			
 			
 		} catch (IOException e) {
-			throw new CrawlerException("Couldn't get document from server.     " + uri);
+			throw new CrawlerException("Couldn't get document from server.    " + uri);
+		}
+		
+		return toReturn;
+	}
+	
+	private int GetContentLength(StringBuilder request) {
+		int toReturn = -1;
+		
+		int lengthIndex = request.indexOf("content-length:");
+		if (lengthIndex != -1) {
+			String docLength = request.substring(lengthIndex + 15, Math.min(request.indexOf("\r", lengthIndex + 15), request.indexOf(" ", lengthIndex + 15)));
+			toReturn = Integer.parseInt(docLength);
 		}
 		
 		return toReturn;
@@ -148,82 +148,6 @@ public class HtmlAnalyzer implements Runnable {
 		HttpRequest headRequset = new HttpRequest(link);
 		return headRequset.CreateRequest(eRequestType.HEAD);
 	}
-	
-	// NOT SURE IF WE NEED THIS
-	private String DetrmineType(String ext) {
-		eContentType type = eContentType.icon;
-		switch (ext) {
-		case "html":
-			type = eContentType.text;
-			break;
-		case "bmp":
-			type = eContentType.text;
-			break;
-		case "jpg":
-			type = eContentType.text;
-			break;
-		case "png":
-			type = eContentType.text;
-			break;
-		case "gif":
-			type = eContentType.text;
-			break;
-		case "ico":
-			type = eContentType.text;
-			break;
-		case "avi":
-			type = eContentType.text;
-			break;
-		case "mpg":
-			type = eContentType.text;
-			break;
-		case "mp4":
-			type = eContentType.text;
-			break;
-		case "wmv":
-			type = eContentType.text;
-			break;
-		case "mov":
-			type = eContentType.text;
-			break;
-		case "flv":
-			type = eContentType.text;
-			break;
-		case "swf":
-			type = eContentType.text;
-			break;
-		case "mkv":
-			type = eContentType.text;
-			break;
-		case "pdf":
-			type = eContentType.text;
-			break;
-		case "doc":
-			type = eContentType.text;
-			break;
-		case "docx":
-			type = eContentType.text;
-			break;
-		case "xls":
-			type = eContentType.text;
-			break;
-		case "xlsx":
-			type = eContentType.text;
-			break;
-		case "ppt":
-			type = eContentType.text;
-			break;
-		case "pptx":
-			type = eContentType.text;
-			break;
-		default:
-			break;
-		}
-		
-		return type.GetType();
-	}
-	
-	
 	
 	
 
